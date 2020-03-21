@@ -1,67 +1,79 @@
-const express = require('express')
+const express=require('express');
+const bodyParser=require('body-parser');
+const Partner=require('../models/partner');
 
-const partnerRouter = express.Router()
+const partnerRouter=express.Router();
 
-partnerRouter
-  .route('/')
-  .all((req, res, next) => {
-    res.statusCode = 200
-    res.setHeader('Content-Type', 'text/plain')
-    next()
-  })
-  .get((req, res) => {
-    res.send('Will send all the partners to you in time')
-  })
-  .post((req, res) => {
-    res.send(
-      'will add the partner: ' +
-        req.body.name +
-        ' with desc: ' +
-        req.body.description
-    )
-  })
-  .put((req, res) => {
-    res.statusCode = 403
-    res.end('put not supported')
-  })
-  .delete((req, res) => {
-    res.end('deleting all partners')
-  })
+partnerRouter.use(bodyParser.json());
 
-partnerRouter
-  .route('/:partnerId')
-  .all((req, res, next) => {
-    res.statusCode = 200
-    res.setHeader('Content-Type', 'text/plain')
-    next()
-  })
-  .get((req, res) => {
-    console.log('hit')
-    res.send('Will send all the partners to you id: ' + req.params.partnerId)
-  })
-  .post((req, res) => {
-    res.send(
-      'will add the partner: ' +
-        req.body.name +
-        ' with desc: ' +
-        req.body.description +
-        ' id: ' +
-        req.params.partnerId
-    )
-  })
-  .put((req, res) => {
-    res.statusCode = 403
-    res.send(
-      'will update the partner: ' +
-        req.body.name +
-        ' with desc: ' +
-        req.body.description +
-        ' id: ' +
-        req.params.partnerId
-    )
-  })
-  .delete((req, res) => {
-    res.end('deleting partner with id: ' + req.params.partnerId)
-  })
+partnerRouter.route('/')
+    .get((req, res, next) => {
+        Partner.find()
+            .then(partners => {
+                res.statusCode=200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partners);
+            })
+            .catch(err => next(err));
+    })
+    .post((req, res) => {
+        Partner.create(req.body)
+            .then(partner => {
+                console.log('Partner Created ', partner);
+                res.statusCode=200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partner);
+            })
+            .catch(err => next(err));
+    })
+    .put((req, res) => {
+        res.statusCode=403;
+        res.end('PUT operation not supported on /partners');
+    })
+    .delete((req, res) => {
+        Partner.deleteMany()
+            .then(response => {
+                res.statusCode=200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(response);
+            })
+            .catch(err => next(err));
+    });
 
-module.exports = partnerRouter
+partnerRouter.route('/:partnerId')
+    .get((req, res) => {
+        Partner.findById(req.params.partnerId)
+            .then(partner => {
+                res.statusCode=200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partner);
+            })
+            .catch(err => next(err));
+    })
+    .post((req, res) => {
+        res.statusCode=403;
+        res.end(`POST operation not supported on /partnerId/${req.params.partnerId}`);
+    })
+    .put((req, res) => {
+        Partner.findByIdAndUpdate(req.params.partnerId, {
+            $set: req.body
+        }, {new: true})
+            .then(partner => {
+                res.statusCode=200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partner);
+            })
+            .catch(err => next(err));
+    })
+    .delete((req, res) => {
+        Partner.findByIdAndDelete(req.params.partnerId)
+            .then(response => {
+                res.statusCode=200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(response);
+            })
+            .catch(err => next(err));
+    });
+
+
+module.exports=partnerRouter;
